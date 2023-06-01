@@ -1,41 +1,36 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <libusb-1.0/libusb.h>
 
-int main(void)
+// Define the vendor and product IDs of the allowed USB device
+#define VENDOR_ID 0x1234
+#define PRODUCT_ID 0xabcd
+
+int main()
 {
-    libusb_device **devs;
-    int r;
-    ssize_t cnt;
+    // Initialize the libusb library
+    libusb_init(NULL);
 
-    r = libusb_init(NULL);
-    if (r < 0) {
-        printf("libusb_init error: %d\n", r);
+    // Get the USB device handle for the specific port
+    libusb_device_handle *dev = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
+    if (dev == NULL) {
+        printf("Error: couldn't find USB device\n");
         return 1;
     }
 
-    cnt = libusb_get_device_list(NULL, &devs);
-    if (cnt < 0) {
-        printf("libusb_get_device_list error: %zd\n", cnt);
-        return 1;
-    }
-
-    printf("Found %zd USB devices:\n", cnt);
-
-    for (ssize_t i = 0; i < cnt; i++) {
-        struct libusb_device *dev = devs[i];
-        struct libusb_device_descriptor desc;
-        r = libusb_get_device_descriptor(dev, &desc);
-        if (r < 0) {
-            printf("libusb_get_device_descriptor error: %d\n", r);
-            continue;
+    // Monitor the USB port for insertion of the allowed device
+    while (true) {
+        libusb_device_handle *new_dev = libusb_open_device_with_vid_pid(NULL, VENDOR_ID, PRODUCT_ID);
+        if (new_dev != NULL) {
+            printf("Allowed USB device inserted!\n");
+            // Mount the device or do whatever you want here
+            libusb_close(new_dev);
+            break;
         }
-        printf("- Vendor ID: 0x%04x, Product ID: 0x%04x\n",
-               desc.idVendor, desc.idProduct);
+        libusb_handle_events_completed(NULL, NULL);
     }
 
-    libusb_free_device_list(devs, 1);
+    // Clean up and exit
+    libusb_close(dev);
     libusb_exit(NULL);
-
     return 0;
 }
