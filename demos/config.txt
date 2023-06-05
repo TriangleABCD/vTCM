@@ -1,0 +1,9 @@
+port = 0
+
+vid = 0x14cd
+
+pid = 1212
+
+encrypt = true
+
+hash = sm3
