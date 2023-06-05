@@ -12,4 +12,8 @@
     -- usb filter
     usb_filter = [{0x1234, 0x1234}, {0x5678, 0x5678}, {0x9abc, 0x9abc}]
 
-
+-- container config
+    -- path config
+    normal_container_path = normal/
+    secure_container_path = secure/
+    hash_path = sm3_hash.txt
