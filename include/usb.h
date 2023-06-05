@@ -6,6 +6,7 @@
 #include <libusb-1.0/libusb.h>
 #include <vector>
 #include <string>
+#include <map>
 
 enum USBState {
     NORMAL,
@@ -32,7 +33,7 @@ struct USBChecker {
     int normal_port;
     int secure_port;
     
-    int initUSB(std::string config_path);
+    int initUSB(const std::map<std::string, std::string>& configMap);
 
     USBState checkUSB();
 };
