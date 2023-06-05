@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <regex>
 
 enum USBState {
     NORMAL,
@@ -33,7 +34,7 @@ struct USBChecker {
     int normal_port;
     int secure_port;
     
-    int initUSB(const std::map<std::string, std::string>& configMap);
+    int initUSB(std::map<std::string, std::string>& configMap);
 
     USBState checkUSB();
 };
