@@ -76,16 +76,18 @@ USBState USBChecker::checkUSB() {
     libusb_free_device_list(devs, 1);
     libusb_exit(ctx);
 
-    std::set<USBDevice> fil;
+    std::set<std::string> fil;
 
     for(auto f: this->filter) {
-        fil.insert(f);
+        std::string tmp = std::to_string(f.vid) + ":" + std::to_string(f.pid);
+        fil.insert(tmp);
     }
 
     std::vector<USBDevice> fil_usb_list;
 
     for(auto& u: usb_list) {
-        if(fil.find(u) == fil.end()) {
+        std::string tmp = std::to_string(u.vid) + ":" + std::to_string(u.pid);
+        if(fil.find(tmp) == fil.end()) {
             fil_usb_list.push_back(u);
         }
     }

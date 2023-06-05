@@ -25,16 +25,6 @@ struct USBDevice {
     USBDevice(int vid = 0, int pid = 0, int port = 0);
     
     void setID(int vid = 0, int pid = 0, int port = 0);
-
-    bool operator< (const USBDevice& usb) const {
-        if(this->vid == usb.vid) {
-            if(this->pid == usb.pid) {
-                return true;
-            }
-            return this->pid < usb.pid;
-        }
-        return this->vid < usb.vid;
-    }
 };
 
 struct USBChecker {
