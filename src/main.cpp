@@ -31,8 +31,9 @@ int initConfig(std::string config_path) {
 int main(int argc, char** argv) {
     std::string path{argv[1]};
     initConfig(path);
-    for(auto& it: configMap) {
-        std::cout << it.first << " = " << it.second << std::endl;
-    }
+    USBChecker usbc;
+    usbc.initUSB(configMap);
+    auto res = usbc.checkUSB(); 
+    std::cout << res << std::endl;
     return 0;
 }
