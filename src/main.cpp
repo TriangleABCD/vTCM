@@ -50,7 +50,7 @@ std::vector<std::string> readDirectory(const std::string& directoryPath) {
 }
 
 std::string sm3(std::string s) {
-    return "42";
+    return s.substr(0, 128);
 }
 
 std::string getSM3Hash() {
@@ -74,7 +74,7 @@ std::string getSM3Hash() {
 int main(int argc, char** argv) {
     std::string path{"config.txt"};
     initConfig(path);
-    std::string ans_hash = "114";
+    std::string ans_hash = "";
     std::fstream hashFile(configMap["hash_path"]);
     ans_hash = getSM3Hash();
 
