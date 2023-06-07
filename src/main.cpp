@@ -3,10 +3,12 @@
 #include <filesystem>
 #include <string>
 #include <map>
+#include <lxc/lxccontainer.h>
 
 #include "usb.h"
 #include "sm3.h"
 #include "sm4.h"
+#include "EscapeCode.h"
 
 std::map<std::string, std::string> configMap;
 
@@ -60,17 +62,6 @@ std::vector<std::string> readDirectory(const std::string& directoryPath) {
     return result;
 }
 
-void print(std::string s) {
-    int k = 0;
-    for(auto& c: s) {
-        std::cout << c;
-        ++k;
-        if(k % 32 == 0) {
-            std::cout << "\n";
-        }
-    }
-    std::cout << "##\n";
-}
 
 std::string getSM3Hash() {
     auto secure = readDirectory(configMap["secure_container_path"]);
@@ -93,10 +84,16 @@ std::string getSM3Hash() {
 
 
 int main(int argc, char** argv) {
+    std::cout << set_color("[Xi Rang] vTCM booting...\n", COLOR_GREEN);
+    std::cout << set_color("[Xi Rang] reading config file...\n", COLOR_GREEN);
+
+
     std::string path{"config.txt"};
     initConfig(path);
-    
+     
     std::fstream hashFile(configMap["hash_path"]);
+    
+    std::cout << set_color("[Xi Rang] config finished\n", COLOR_GREEN);
 
     if(configMap["init"] == "true") {
         std::string hash = getSM3Hash();
@@ -110,11 +107,16 @@ int main(int argc, char** argv) {
         encrypt_hash += sm4.getY();
 
         hashFile << encrypt_hash;
+        std::cout << set_color("[Xi Rang] init file hash finished\n", COLOR_GREEN);
         return 0;
     }
     
+    std::cout << set_color("[Xi Rang] verifying file hash...\n", COLOR_GREEN);
+    
     std::string ans_hash;
     hashFile >> ans_hash;
+
+    hashFile.close();
 
     SM4 sm4(ans_hash.substr(0,128), sm4_key);
     sm4.genRK();
@@ -127,19 +129,23 @@ int main(int argc, char** argv) {
     std::string cur_hash = getSM3Hash();
 
     if(hash != cur_hash) {
-        goto boom;
+        std::cout << set_color("[Xi Rang] The system has been hacked !!!\n", COLOR_RED);
+        return -1;
     }
+    std::cout << set_color("[Xi Rang] file verified\n", COLOR_GREEN);
 
-    printf("\033[33m OK\n");
+    USBChecker usbc;
+    usbc.initUSB(configMap);
+check_usb:
+    auto res = usbc.checkUSB(); 
 
+    if(USBState::SECURE == res) {
+         
+    } else if(USBState::NORMAL == res) {
 
-    // USBChecker usbc;
-    // usbc.initUSB(configMap);
-    // auto res = usbc.checkUSB(); 
-    // std::cout << res << std::endl;
-    return 0;
-
-boom:
-    printf("\033[31m The system has been hacked !!!\n");
+    } else {
+        std::cout << set_color("[Xi Rang] Invalid usb insertion !!!\n", COLOR_RED);
+        return -1;
+    }
     return 0;
 }
