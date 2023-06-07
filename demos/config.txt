@@ -1,3 +1,5 @@
+    init = false
+
 -- USB config
     -- secure usb
     secure_usb_vid  = 0x14cd

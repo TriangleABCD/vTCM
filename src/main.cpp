@@ -5,8 +5,18 @@
 #include <map>
 
 #include "usb.h"
+#include "sm3.h"
+#include "sm4.h"
 
 std::map<std::string, std::string> configMap;
+
+
+std::string sm4_key = 
+    "00010011100100000100000000000000"
+    "00001110000000000000000100000100"
+    "00000000000000001110000000000000"
+    "00010000010000000000000000001100"
+;
 
 int initConfig(std::string config_path) {
     std::ifstream configFile(config_path);
@@ -29,6 +39,7 @@ int initConfig(std::string config_path) {
     return 0;
 }
 
+
 std::vector<std::string> readDirectory(const std::string& directoryPath) {
     std::vector<std::string> result;
     for(const auto& file : std::filesystem::directory_iterator(directoryPath)) {
@@ -49,8 +60,16 @@ std::vector<std::string> readDirectory(const std::string& directoryPath) {
     return result;
 }
 
-std::string sm3(std::string s) {
-    return s.substr(0, 128);
+void print(std::string s) {
+    int k = 0;
+    for(auto& c: s) {
+        std::cout << c;
+        ++k;
+        if(k % 32 == 0) {
+            std::cout << "\n";
+        }
+    }
+    std::cout << "##\n";
 }
 
 std::string getSM3Hash() {
@@ -67,22 +86,60 @@ std::string getSM3Hash() {
     }
 
     std::string str = secure_str + normal_str;
-    std::string hash = sm3(str);
+    SM3 sm3(str);
+    std::string hash = sm3.getHash();
     return hash;
 }
+
 
 int main(int argc, char** argv) {
     std::string path{"config.txt"};
     initConfig(path);
-    std::string ans_hash = "";
+    
     std::fstream hashFile(configMap["hash_path"]);
-    ans_hash = getSM3Hash();
 
-    hashFile << ans_hash;
+    if(configMap["init"] == "true") {
+        std::string hash = getSM3Hash();
 
-    USBChecker usbc;
-    usbc.initUSB(configMap);
-    auto res = usbc.checkUSB(); 
-    std::cout << res << std::endl;
+        SM4 sm4(hash.substr(0, 128), sm4_key);
+        sm4.genRK();
+        sm4.encrypt();
+        std::string encrypt_hash = sm4.getY();
+        sm4.setMsg(hash.substr(128));
+        sm4.encrypt();
+        encrypt_hash += sm4.getY();
+
+        hashFile << encrypt_hash;
+        return 0;
+    }
+    
+    std::string ans_hash;
+    hashFile >> ans_hash;
+
+    SM4 sm4(ans_hash.substr(0,128), sm4_key);
+    sm4.genRK();
+    sm4.decrypt();
+    std::string hash = sm4.getY();
+    sm4.setMsg(ans_hash.substr(128));
+    sm4.decrypt();
+    hash += sm4.getY();
+
+    std::string cur_hash = getSM3Hash();
+
+    if(hash != cur_hash) {
+        goto boom;
+    }
+
+    printf("\033[33m OK\n");
+
+
+    // USBChecker usbc;
+    // usbc.initUSB(configMap);
+    // auto res = usbc.checkUSB(); 
+    // std::cout << res << std::endl;
+    return 0;
+
+boom:
+    printf("\033[31m The system has been hacked !!!\n");
     return 0;
 }
