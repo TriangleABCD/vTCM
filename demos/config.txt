@@ -1,18 +1,17 @@
     init = false
-
 -- USB config
     -- secure usb
     secure_usb_vid  = 0x14cd
     secure_usb_pid  = 0x1212
-    secure_usb_port = 0
+    secure_usb_port = 2
 
     -- normal usb
-    normal_usb_vid  = 0xcd14
-    normal_usb_pid  = 0x1145
-    normal_usb_port = 1
+    normal_usb_vid  = 0x0781
+    normal_usb_pid  = 0x558c
+    normal_usb_port = 4
 
     -- usb filter
-    usb_filter = [{0x1234, 0x1234}, {0x5678, 0x5678}, {0x9abc, 0x9abc}]
+    usb_filter = [{0x1d6b, 0x0002}, {0x1d6b, 0x0003}, {0x2109, 0x3431}, {0x1d6b, 0x0002}]
 
 -- container config
     -- path config
