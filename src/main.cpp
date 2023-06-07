@@ -42,11 +42,14 @@ int initConfig(std::string config_path) {
 }
 
 
-std::vector<std::string> readDirectory(const std::string& directoryPath) {
+std::vector<std::string> readDirectory(const std::string& directoryPath, int depth) {
+    if(depth > 1) {
+        return std::vector<std::string>();
+    }
     std::vector<std::string> result;
     for(const auto& file : std::filesystem::directory_iterator(directoryPath)) {
         if(file.is_directory()) {
-            auto subFiles = readDirectory(file.path().string());
+            auto subFiles = readDirectory(file.path().string(), depth+1);
             for(const auto& subFile : subFiles) {
                 result.push_back(file.path().filename().string() + "/\n" + subFile);
             }
@@ -64,8 +67,8 @@ std::vector<std::string> readDirectory(const std::string& directoryPath) {
 
 
 std::string getSM3Hash() {
-    auto secure = readDirectory(configMap["secure_container_path"]);
-    auto normal = readDirectory(configMap["normal_container_path"]);
+    auto secure = readDirectory(configMap["secure_container_path"], 0);
+    auto normal = readDirectory(configMap["normal_container_path"], 0);
 
     std::string secure_str = "";
     std::string normal_str = "";
@@ -82,10 +85,24 @@ std::string getSM3Hash() {
     return hash;
 }
 
+int runContainer(std::string name) {
+    std::string cmd = "lxc-start -n " + name + " -P /code/vTCM_test/";
+    system(cmd.c_str());
+    cmd = "lxc-attach -n " + name + " -P /code/vTCM_test/";
+    system(cmd.c_str());
+    return 0;
+}
+
+int stopContainer(std::string name) {
+    std::string cmd = "lxc-stop -n " + name + " -P /code/vTCM_test/";
+    system(cmd.c_str());
+    return 0;
+}
+
 
 int main(int argc, char** argv) {
     std::cout << set_color("[Xi Rang] vTCM booting...\n", COLOR_GREEN);
-    std::cout << set_color("[Xi Rang] reading config file...\n", COLOR_GREEN);
+    std::cout << set_color("[Xi Rang] Reading config file...\n", COLOR_GREEN);
 
 
     std::string path{"config.txt"};
@@ -93,9 +110,10 @@ int main(int argc, char** argv) {
      
     std::fstream hashFile(configMap["hash_path"]);
     
-    std::cout << set_color("[Xi Rang] config finished\n", COLOR_GREEN);
+    std::cout << set_color("[Xi Rang] Config finished\n", COLOR_GREEN);
 
     if(configMap["init"] == "true") {
+        std::cout << set_color("[Xi Rang] Init file hash...\n", COLOR_GREEN);
         std::string hash = getSM3Hash();
 
         SM4 sm4(hash.substr(0, 128), sm4_key);
@@ -107,11 +125,11 @@ int main(int argc, char** argv) {
         encrypt_hash += sm4.getY();
 
         hashFile << encrypt_hash;
-        std::cout << set_color("[Xi Rang] init file hash finished\n", COLOR_GREEN);
+        std::cout << set_color("[Xi Rang] Init file hash finished\n", COLOR_GREEN);
         return 0;
     }
     
-    std::cout << set_color("[Xi Rang] verifying file hash...\n", COLOR_GREEN);
+    std::cout << set_color("[Xi Rang] Verifying file hash...\n", COLOR_GREEN);
     
     std::string ans_hash;
     hashFile >> ans_hash;
@@ -132,17 +150,18 @@ int main(int argc, char** argv) {
         std::cout << set_color("[Xi Rang] The system has been hacked !!!\n", COLOR_RED);
         return -1;
     }
-    std::cout << set_color("[Xi Rang] file verified\n", COLOR_GREEN);
+    std::cout << set_color("[Xi Rang] File verified\n", COLOR_GREEN);
 
     USBChecker usbc;
     usbc.initUSB(configMap);
-check_usb:
     auto res = usbc.checkUSB(); 
 
     if(USBState::SECURE == res) {
-         
+        std::cout << set_color("[Xi Rang] Secure mode booting...\n", COLOR_BLUE);
+        runContainer("secure");
     } else if(USBState::NORMAL == res) {
-
+        std::cout << set_color("[Xi Rang] Normal mode booting...\n", COLOR_BLUE);
+        runContainer("normal");
     } else {
         std::cout << set_color("[Xi Rang] Invalid usb insertion !!!\n", COLOR_RED);
         return -1;

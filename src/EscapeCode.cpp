@@ -6,7 +6,7 @@
 std::string set_color(std::string str, std::string c) {
 	std::string result = "\033[";
 	result += c;
-	result += "m ";
+	result += "m";
 	result += str;
 	return result;
 }
